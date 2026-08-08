@@ -7,6 +7,16 @@
 
 // #include "Client.hpp"
 
+enum JoinResult
+{
+    JOIN_OK = 0,
+    JOIN_ALREADY_MEMBER,
+    JOIN_CHANNEL_FULL,
+    JOIN_INVITE_ONLY,
+    JOIN_NOT_INVITED,
+    JOIN_BAD_KEY
+};
+
 class Channel
 {
     private:
@@ -33,7 +43,7 @@ class Channel
         ~Channel();
     
         int                     join(Client &c, const std::string &key);
-        void                    part(Client &c, const std::string &reason);
+        void                    part(Client &c, const std::string &reason); //af apply this meth uu need to check isEmpty() 
         void                    kick(Client &op, Client &target, const std::string &reason);
         void                    invite(Client &op, const std::string &nick);
         void                    setTopic(Client &c, const std::string &topic);
