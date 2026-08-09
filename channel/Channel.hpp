@@ -34,6 +34,7 @@ class Channel
 
         bool                  _hasKey;
         bool                  _hasLimit;
+        bool                   _addingMode;
 
         Channel(const Channel &other);
         Channel &operator=(const Channel &other);
@@ -49,6 +50,16 @@ class Channel
         void                    setTopic(Client &c, const std::string &topic);
     
         void                    applyModes(Client &c, const std::string &str, const std::vector<std::string> &args);
+        void                    handleMode(bool addingMode, char mode, std::vector<std::string>::const_iterator &it,
+                                const std::vector<std::string> &args);
+        void                    handleModeI(bool addingMode);
+        void                    handleModeT(bool addingMode);
+        void                    handleModeK(bool addingMode, std::vector<std::string>::const_iterator &it,
+                                const std::vector<std::string> &args);
+        void                    handleModeO(bool addingMode, std::vector<std::string>::const_iterator &it,
+                                const std::vector<std::string> &args);
+        void                    handleModeL(bool addingMode, std::vector<std::string>::const_iterator &it,
+                                const std::vector<std::string> &args);
     
         void                    broadcast(const std::string &msg, Client *except);
     
