@@ -5,7 +5,11 @@
 #include "Server.hpp"
 #include <cstring>
 #include <sstream>
+<<<<<<< Updated upstream
 
+=======
+#include <csignal>
+>>>>>>> Stashed changes
 int parsePort(const std::string &text)
     {
         std::istringstream iss(text);
@@ -26,10 +30,20 @@ int main(int argc, char** argv)
     int port = parsePort(argv[1]);
     std::string password = argv[2];
 
+<<<<<<< Updated upstream
+=======
+    std::signal(SIGPIPE, SIG_IGN);
+
+
+>>>>>>> Stashed changes
     try
     {
         Server s(port,password);
         s.setupListener();
+<<<<<<< Updated upstream
+=======
+        s.run();
+>>>>>>> Stashed changes
     }
     catch(const std::exception& e)
     {

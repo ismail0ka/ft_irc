@@ -120,7 +120,11 @@ bool Client::appendIn(const char* data, std::size_t n)
 {
     _inBuffer.append(data, n);
 
+<<<<<<< Updated upstream
     // irc messages are capped at 512char!
+=======
+    
+>>>>>>> Stashed changes
     if (_inBuffer.size() > 512 && _inBuffer.find('\n') == std::string::npos)
         return false;
 
