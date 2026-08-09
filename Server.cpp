@@ -9,17 +9,18 @@
 #include <fcntl.h>
 #include <cstring>
 #include <sstream>
-<<<<<<< Updated upstream
-
-
-
-Server::Server(int port , std::string password) :  _port(port), _password(password) 
-{
-    _socketfd = -1;
-=======
 #include <sys/epoll.h>
 
 #include <iostream>
+#include <cerrno>
+#include <csignal>
+
+static volatile sig_atomic_t g_stop = 0;
+
+static void handleSignal(int)
+{
+    g_stop = 1;
+}
 
 
 
@@ -29,7 +30,6 @@ Server::Server(int port , std::string password) :  _port(port), _password(passwo
 {
     _socketfd = -1;
     _epfd = -1;
->>>>>>> Stashed changes
 }
 
 Server::Server(const Server& other)
@@ -56,14 +56,11 @@ Server::~Server()
 
     if (_socketfd >= 0)
         close(_socketfd);
-<<<<<<< Updated upstream
-=======
 
     if (_epfd >= 0)
     {
         close(_epfd);
     }
->>>>>>> Stashed changes
 }
 
 void Server::setupListener()
@@ -88,15 +85,13 @@ void Server::setupListener()
     addr.sin_port = htons(static_cast<u_int16_t>(getPort()));
 
     if (bind(_socketfd, reinterpret_cast<sockaddr* > (&addr), sizeof(addr)) < 0)
-        throw std::runtime_error("cannot set nonblock flag");
+        throw std::runtime_error("bind failed (port already in use?)");
 
 
     if (listen(_socketfd,SOMAXCONN) < 0)
 
         throw std::runtime_error("server cannot listen");
 
-<<<<<<< Updated upstream
-=======
     if ((_epfd = epoll_create1(0)) < 0 )
         throw std::runtime_error("epoll failed at creation epollfd");
 
@@ -108,7 +103,6 @@ void Server::setupListener()
     if (epoll_ctl(_epfd,EPOLL_CTL_ADD, _socketfd,&ev) < 0 )
         throw std::runtime_error("epoll failed at monitiring the epoll fd");
 
->>>>>>> Stashed changes
 }
 
 
@@ -147,35 +141,36 @@ void Server::acceptClient()
         return;
     }
 
-    Client* client = new Client(clientfd);
 
-    
-<<<<<<< Updated upstream
-
-=======
-    struct epoll_event ev;
-    std::memset(&ev, 0, sizeof(ev));
-    ev.events  = EPOLLIN;
-    ev.data.fd = clientfd;      
-    if (epoll_ctl(_epfd, EPOLL_CTL_ADD, clientfd, &ev) < 0)
+    Client* client = NULL;
+    try
     {
-        delete client;
+        client = new Client(clientfd);
+
+        struct epoll_event ev;
+        std::memset(&ev, 0, sizeof(ev));
+        ev.events  = EPOLLIN;
+        ev.data.fd = clientfd;
+        if (epoll_ctl(_epfd, EPOLL_CTL_ADD, clientfd, &ev) < 0)
+        {
+            delete client;
+            return;
+        }
+
+        _clients.insert(std::make_pair(clientfd, client));
+    }
+    catch (const std::exception&)
+    {
+        epoll_ctl(_epfd, EPOLL_CTL_DEL, clientfd, NULL);
+        if (client == NULL)
+            close(clientfd);
+        else
+            delete client;
         return;
-    }   
->>>>>>> Stashed changes
-    _clients.insert(std::make_pair(clientfd, client));
+    }
 }
 
 
-<<<<<<< Updated upstream
-void Server::readFrom(Client& c)
-{
-
-}
-void Server::sendTo(Client& c)
-{
-
-=======
 void Server::removeClient(int fd)
 {
     std::map<int, Client*>::iterator it = _clients.find(fd);
@@ -234,9 +229,21 @@ void Server::run()
 {
     struct epoll_event events[MAX_EVENTS];
 
-    while (1)
+    std::signal(SIGINT,  handleSignal);
+    std::signal(SIGQUIT, handleSignal);
+    std::signal(SIGTERM, handleSignal);
+
+    while (!g_stop)
     {
         int n = epoll_wait(_epfd, events, MAX_EVENTS, -1);
+
+        if (n < 0)
+        {
+   
+            if (errno == EINTR)
+                continue;
+            break;
+        }
 
         for (int i = 0; i < n; i++)
         {
@@ -273,6 +280,15 @@ void Server::run()
             }
         }
 
+        
+        for (std::set<int>::iterator it = _pendingClose.begin();
+             it != _pendingClose.end(); ++it)
+        {
+            removeClient(*it);
+        }
+        _pendingClose.clear();
+
+        
         for (std::map<int , Client*>::iterator it = _clients.begin(); it != _clients.end(); ++it)
         {
             struct epoll_event ev;
@@ -284,12 +300,7 @@ void Server::run()
                 ev.events = EPOLLIN;
             epoll_ctl(_epfd, EPOLL_CTL_MOD, it->second->getFd(), &ev);
         }
-        for (std::set<int>::iterator it = _pendingClose.begin();
-             it != _pendingClose.end(); ++it)
-        {
-            removeClient(*it);
-        }
-        _pendingClose.clear();
     }
->>>>>>> Stashed changes
+
+    std::cout << "\nshutting down" << std::endl;
 }
