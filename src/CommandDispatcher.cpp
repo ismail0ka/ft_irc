@@ -2,15 +2,9 @@
 /*                                                                            */
 /*   CommandDispatcher.cpp                                OWNER B - protocol  */
 /*                                                                            */
-/*   Needs from OWNER A:                                                       */
-/*     Client::isRegistered() const  -> bool                                   */
-/*     Client::nick() const          -> std::string (empty before NICK)        */
-/*     Client::queue(std::string)    -> void                                   */
-/*     replies.hpp : ERR_UNKNOWNCOMMAND(nick, command)                         */
-/*                   ERR_NOTREGISTERED(nick)                                   */
-/*   Both macros must expand to a full line, CRLF included.                    */
-/*   If A names them differently, only replyUnknown()/replyNotRegistered()     */
-/*   below have to change -- nothing else in B's code touches replies.hpp.     */
+/*   Everything it needs from the rest of the code base is behind these three  */
+/*   lines: Client::isRegistered(), Client::queue(), replyTarget(), and the    */
+/*   two numerics below. Nothing else in B's code touches replies.hpp.         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,27 +14,17 @@
 #include "Message.hpp"
 #include "Server.hpp"
 #include "commands.hpp"
+#include "irc_utils.hpp"
 #include "replies.hpp"
-
-/* A client that has not sent NICK yet has no name to put in a numeric, and
-   the RFC uses '*' as the placeholder target in that case. */
-static std::string	targetOf(Client& c)
-{
-	std::string	nick = c.nick();
-
-	if (nick.empty())
-		return (std::string("*"));
-	return (nick);
-}
 
 static void	replyUnknown(Client& c, const std::string& command)
 {
-	c.queue(ERR_UNKNOWNCOMMAND(targetOf(c), command));
+	c.queue(ERR_UNKNOWNCOMMAND(replyTarget(c), command));
 }
 
 static void	replyNotRegistered(Client& c)
 {
-	c.queue(ERR_NOTREGISTERED(targetOf(c)));
+	c.queue(ERR_NOTREGISTERED(replyTarget(c)));
 }
 
 CommandDispatcher::CommandDispatcher() : _table()
