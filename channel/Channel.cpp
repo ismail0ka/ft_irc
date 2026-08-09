@@ -33,7 +33,7 @@ void                    Channel::part(Client &c, const std::string &reason)
 void                    Channel::kick(Client &op, Client &target, const std::string &reason)
 {
     (void)reason;
-    if (_operators.find(&op) == _operators.end())
+    if (!isOp(op))
         return ;
     if (_members.find(&target) == _members.end())
         return ;
@@ -43,7 +43,7 @@ void                    Channel::kick(Client &op, Client &target, const std::str
 
 void                    Channel::invite(Client &op, const std::string &nick)
 {
-    if (_operators.find(&op) == _operators.end())
+    if (!isOp(op))
         return ;
 
     std::set<Client *>::iterator it;
@@ -62,7 +62,7 @@ void                    Channel::setTopic(Client &c, const std::string &topic)
 {
     if (_topicLocked)
     {
-        if (_operators.find(&c) == _operators.end())
+        if (!isOp(op))
             return ;
     }
     this->_topic = topic;
@@ -70,7 +70,7 @@ void                    Channel::setTopic(Client &c, const std::string &topic)
 
 void Channel::applyModes(Client &c, const std::string &str, const std::vector<std::string> &args)
 {
-    if (_operators.find(&c) == _operators.end())
+    if (!isOp(op))
         return;
 
     bool addingMode = true;
@@ -159,4 +159,27 @@ void Channel::handleModeL(bool addingMode, std::vector<std::string>::const_itera
         return;
     _hasLimit = true, _limit = std::atol(it->c_str());
     ++it;
+}
+
+void Channel::broadcast(const std::string &msg, Client *except)
+{
+    std::set<Client *>::iterator it;
+
+    for (it = _members.begin(); it != _members.end(); ++it)
+    {
+        if (*it != except)
+            (*it)->queue(msg);
+    }
+}
+
+bool                    Channel::isOp(Client &c) const
+{
+    if (_operators.find(&c) == _operators.end())
+        return false;
+    return true;
+}
+
+bool Channel::isEmpty() const
+{
+    return _members.empty();
 }
