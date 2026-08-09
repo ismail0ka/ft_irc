@@ -1,5 +1,4 @@
 #include <iostream>
-<<<<<<< Updated upstream
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -20,31 +19,10 @@ static int parsePort(const std::string& text)
     return port;
 }
 
-=======
-
-#include <istream>
-
-#include "Server.hpp"
-#include <cstring>
-#include <sstream>
-#include <csignal>
-int parsePort(const std::string &text)
-    {
-        std::istringstream iss(text);
-        int                port = 0;
- 
-        if (!(iss >> port) || !iss.eof())
-            throw std::runtime_error("port must be a number");
-        if (port < 1024 || port > 65535)
-            throw std::runtime_error("port must be between 1024 and 65535");
-        return port;
-    }
->>>>>>> Stashed changes
 int main(int argc, char** argv)
 {
     if (argc != 3)
     {
-<<<<<<< Updated upstream
         std::cerr << "usage: " << argv[0] << " <port> <password>" << std::endl;
         return 1;
     }
@@ -69,25 +47,3 @@ int main(int argc, char** argv)
 
     return 0;
 }
-=======
-        return -1;
-    }
-    int port = parsePort(argv[1]);
-    std::string password = argv[2];
-
-    std::signal(SIGPIPE, SIG_IGN);
-
-
-    try
-    {
-        Server s(port,password);
-        s.setupListener();
-        s.run();
-    }
-    catch(const std::exception& e)
-    {
-        std::cerr << e.what() << '\n';
-    }
-    
-}
->>>>>>> Stashed changes

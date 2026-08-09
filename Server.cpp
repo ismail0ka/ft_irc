@@ -12,6 +12,7 @@
 #include <sys/epoll.h>
 
 #include <iostream>
+<<<<<<< Updated upstream
 #include <cerrno>
 #include <csignal>
 
@@ -21,6 +22,8 @@ static void handleSignal(int)
 {
     g_stop = 1;
 }
+=======
+>>>>>>> Stashed changes
 
 
 
@@ -85,7 +88,11 @@ void Server::setupListener()
     addr.sin_port = htons(static_cast<u_int16_t>(getPort()));
 
     if (bind(_socketfd, reinterpret_cast<sockaddr* > (&addr), sizeof(addr)) < 0)
+<<<<<<< Updated upstream
         throw std::runtime_error("bind failed (port already in use?)");
+=======
+        throw std::runtime_error("cannot set nonblock flag");
+>>>>>>> Stashed changes
 
 
     if (listen(_socketfd,SOMAXCONN) < 0)
@@ -141,6 +148,7 @@ void Server::acceptClient()
         return;
     }
 
+<<<<<<< Updated upstream
 
     Client* client = NULL;
     try
@@ -168,6 +176,21 @@ void Server::acceptClient()
             delete client;
         return;
     }
+=======
+    Client* client = new Client(clientfd);
+
+    
+    struct epoll_event ev;
+    std::memset(&ev, 0, sizeof(ev));
+    ev.events  = EPOLLIN;
+    ev.data.fd = clientfd;      
+    if (epoll_ctl(_epfd, EPOLL_CTL_ADD, clientfd, &ev) < 0)
+    {
+        delete client;
+        return;
+    }   
+    _clients.insert(std::make_pair(clientfd, client));
+>>>>>>> Stashed changes
 }
 
 
@@ -229,6 +252,7 @@ void Server::run()
 {
     struct epoll_event events[MAX_EVENTS];
 
+<<<<<<< Updated upstream
     std::signal(SIGINT,  handleSignal);
     std::signal(SIGQUIT, handleSignal);
     std::signal(SIGTERM, handleSignal);
@@ -245,6 +269,12 @@ void Server::run()
             break;
         }
 
+=======
+    while (1)
+    {
+        int n = epoll_wait(_epfd, events, MAX_EVENTS, -1);
+
+>>>>>>> Stashed changes
         for (int i = 0; i < n; i++)
         {
             int fd = events[i].data.fd;
@@ -280,6 +310,7 @@ void Server::run()
             }
         }
 
+<<<<<<< Updated upstream
         
         for (std::set<int>::iterator it = _pendingClose.begin();
              it != _pendingClose.end(); ++it)
@@ -289,6 +320,8 @@ void Server::run()
         _pendingClose.clear();
 
         
+=======
+>>>>>>> Stashed changes
         for (std::map<int , Client*>::iterator it = _clients.begin(); it != _clients.end(); ++it)
         {
             struct epoll_event ev;
@@ -300,7 +333,18 @@ void Server::run()
                 ev.events = EPOLLIN;
             epoll_ctl(_epfd, EPOLL_CTL_MOD, it->second->getFd(), &ev);
         }
+<<<<<<< Updated upstream
     }
 
     std::cout << "\nshutting down" << std::endl;
 }
+=======
+        for (std::set<int>::iterator it = _pendingClose.begin();
+             it != _pendingClose.end(); ++it)
+        {
+            removeClient(*it);
+        }
+        _pendingClose.clear();
+    }
+}
+>>>>>>> Stashed changes
