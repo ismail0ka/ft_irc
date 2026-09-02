@@ -185,6 +185,7 @@ void Server::sendTo(Client& c)
         if (errno == EAGAIN || errno == EWOULDBLOCK)
             return;
         disconnect(c.getFd(), "Write error");
+        c.consumeOut(c.outData().size());
         return;
     }
     c.consumeOut(static_cast<std::size_t>(sent));
@@ -214,17 +215,12 @@ void Server::closeQuitClients()
 
     for (std::map<int, Client*>::iterator it = _clients.begin(); it != _clients.end(); ++it)
     {
-        if (it->second->isQuit())
+        if (it->second->isQuit() && !it->second->hasOut())
             gone.push_back(it->first);
     }
 
     for (std::size_t i = 0; i < gone.size(); i++)
-    {
-        Client* c = _clients[gone[i]];
-        if (c->hasOut())
-            send(c->getFd(), c->outData().c_str(), c->outData().size(), 0);
         removeClient(gone[i]);
-    }
 }
 
 Client* Server::findClientByNick(const std::string& nick)
@@ -366,6 +362,7 @@ void Server::run()
             if (re & (POLLERR | POLLHUP | POLLNVAL))
             {
                 disconnect(fd, "Connection error");
+                c.consumeOut(c.outData().size());
                 continue;
             }
             if (re & POLLIN)
