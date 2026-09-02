@@ -20,27 +20,20 @@
 #include "Message.hpp"
 #include "Server.hpp"
 #include "commands.hpp"
+#include "irc_utils.hpp"
 #include "replies.hpp"
 
-/* A client that has not sent NICK yet has no name to put in a numeric, and
-   the RFC uses '*' as the placeholder target in that case. */
-static std::string	targetOf(Client& c)
-{
-	std::string	nick = c.nick();
-
-	if (nick.empty())
-		return (std::string("*"));
-	return (nick);
-}
+/* replyTarget() is the shared version of "the nick, or '*' before NICK": a
+   numeric always needs a target field. */
 
 static void	replyUnknown(Client& c, const std::string& command)
 {
-	c.queue(ERR_UNKNOWNCOMMAND(targetOf(c), command));
+	c.queue(ERR_UNKNOWNCOMMAND(replyTarget(c), command));
 }
 
 static void	replyNotRegistered(Client& c)
 {
-	c.queue(ERR_NOTREGISTERED(targetOf(c)));
+	c.queue(ERR_NOTREGISTERED(replyTarget(c)));
 }
 
 CommandDispatcher::CommandDispatcher() : _table()
